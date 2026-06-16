@@ -1,0 +1,73 @@
+1. 应用自动部署
+将应用部署到多台服务器。
+例如：
+Web服务
+Python项目
+Java项目
+AI推理服务
+kubectl apply -f deployment.yaml
+即可自动部署。
+2. 自动扩缩容（Auto Scaling）
+根据CPU、内存、访问量自动增加或减少Pod数量。
+例如：
+平时3个实例
+高峰期自动扩展到10个实例
+kubectl autoscale deployment web --cpu-percent=80 --min=3 --max=10
+3. 服务发现与负载均衡
+用户访问：
+www.example.com
+K8s自动选择后端服务器。
+例如：
+请求1 → Pod1
+请求2 → Pod2
+请求3 → Pod3
+无需手工配置Nginx。
+4. 故障自愈（Self-Healing）
+当容器崩溃：
+Pod1 挂掉
+K8s自动：
+删除Pod1
+创建新的Pod1
+无需人工干预。
+5. 滚动更新（Rolling Update）
+升级时不停机。
+例如：
+V1 → V2
+逐个替换容器。
+用户几乎感觉不到服务升级。
+6. 回滚（Rollback）
+升级失败：
+kubectl rollout undo deployment/myapp
+立即恢复旧版本。
+7. 配置管理
+通过：
+ConfigMap
+Secret
+管理配置文件。
+例如：
+数据库地址
+API Key
+密码
+无需写死在代码里。
+
+8. 存储管理
+支持：
+本地磁盘
+NFS
+Ceph
+云盘
+例如：
+MySQL数据
+日志文件
+AI模型文件
+9. GPU资源管理
+适用于：
+深度学习训练
+AI推理
+例如：
+PyTorch
+TensorFlow
+YOLO
+resources:
+  limits:
+    nvidia.com/gpu: 1
