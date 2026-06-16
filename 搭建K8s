@@ -1,0 +1,76 @@
+第一步：安装Docker
+docker --version
+第二步：安装K8s
+学习推荐：
+Minikube（单机）
+Minikube Official Site
+适合：
+学习
+测试
+
+Kind
+Kind Official Site
+适合：
+开发
+CI/CD
+
+Kubeadm
+Kubeadm Documentation
+适合：
+企业生产环境
+第三步：创建Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yolo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: yolo
+  template:
+    metadata:
+      labels:
+        app: yolo
+    spec:
+      containers:
+      - name: yolo
+        image: yolo:v1
+部署：
+kubectl apply -f deployment.yaml
+第四步：创建Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: yolo-service
+spec:
+  selector:
+    app: yolo
+  ports:
+  - port: 80
+    targetPort: 8000
+部署：
+kubectl apply -f service.yaml
+第五步：查看运行状态
+kubectl get pods
+kubectl get svc
+kubectl get deployment
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
