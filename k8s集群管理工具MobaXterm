@@ -1,0 +1,30 @@
+与 Xshell、FinalShell 相比：
+MobaXterm功能最全，集成SSH、SFTP、X11、多执行
+MobaXterm 主要功能
+功能	说明
+SSH	远程连接Linux
+SFTP	文件传输    FTP/SCP	文件传输
+X11 Forwarding	图形界面转发
+MultiExec	     多服务器同时执行命令
+RDP	远程桌面
+VNC	图形远程控制
+Serial	串口连接
+
+Linux + Docker + Kubernetes(K8s)，MobaXterm 的 MultiExec（批量执行） 功能特别常用，可以一次给十几台服务器执行：
+yum install docker
+systemctl start docker
+hostnamectl set-hostname node01
+大幅提高集群部署效率
+//MobaXterm使用场景通常出现在：
+Linux服务器批量运维    K8s集群部署
+Hadoop集群部署      Docker Swarm集群部署
+OpenStack环境部署
+例如部署 Kubernetes 时，经常  先给各节点改主机名：
+hostnamectl set-hostname master01
+hostnamectl set-hostname node01
+hostnamectl set-hostname node02
+
+
+
+
+
