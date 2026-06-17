@@ -23,7 +23,7 @@ Ingress	                          入口控制器	HTTP/HTTPS 路由管理
 说明：仅执行步骤 1：安装中的说明，其余内容均包含在本页中。
 你还需要安装 kubectl。 有关安装说明，请参阅安装工具。
 
-2.创建 Minikube 集群 
+2.创建 Minikube 集群                  22分30秒
 minikube start
 启动集群在具有管理员权限（但未以 root 用户身份登录）的终端中运行：
 minikube start
