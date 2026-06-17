@@ -1,0 +1,453 @@
+本教程介绍 Kubernetes 集群编排系统的基础知识。
+每个模块包含关于 Kubernetes 主要特性和概念的一些背景信息，还包括一个在线教程供你学习。
+你可以学习到：
+在集群中 部署容器化应用。
+改变 部署的规模。
+更新 容器化应用以使用新的软件版本。
+调试 容器化应用。
+一、Kubernetes 可以为你做些什么?
+通过使用现代的 Web 服务，用户希望应用能够 24/7 全天候可用，开发人员希望每天可以 多次部署应用的更新版本。
+容器化可以 帮助打包软件以达成这些目标，使应用能够以简单快速的方式 被发布和更新，而不会出现中断。 
+Kubernetes 帮助你确保这些容器化应用在你想要的 时间和地点运行，并帮助应用找到  它们需要的资源和工具。
+Kubernetes 是一个可用于生产环境的开源平台，基于 Google 在容器集群方面积累的经验， 设计上融合了来自社区的最佳实践。
+二、Kubernetes 基础知识模块
+1. 创建一个 Kubernetes 集群
+2. 部署一个应用
+3. 访问你的应用
+4. 公开发布你的应用
+5. 扩大你的应用规模
+6. 更新你的应用
+三、使用 Minikube 创建集群
+了解 Kubernetes 集群。
+了解 Minikube。
+在你的电脑上启动一个 Kubernetes 集群。
+本教程中的 Shell 命令使用 POSIX Shell 语法， 大多数 Linux 和 macOS 系统的默认 Shell（例如 bash、zsh 或 sh）都支持这种语法。 
+Windows 用户必须使用兼容 POSIX 的 Shell，例如 Windows Subsystem for Linux (WSL) 或 Git Bash，才能按本文所述的方式运行这些命令。 
+使用 export、$() 以及类似构造的命令 不兼容 PowerShell 或 Windows Command Prompt。
+Kubernetes 集群   应用于生产环境。
+可编排 在计算机集群内和 跨计算机集群的 应用容器的部署（调度）和执行。
+Kubernetes 协调一个高可用计算机集群，/每个计算机互相连接之后作为同一个工作单元运行/。
+Kubernetes 中的抽象允许你将 容器化的应用部署到集群，而无需将它们绑定到某个特定的独立计算机。 
+为了使用这种新的部署模型，需要以将应用与单个主机解耦的方式打包：它们需要被容器化。 
+与过去的那种应用直接以包的方式深度与主机集成的部署模型相比，容器化应用更灵活、更可用。
+Kubernetes 以更高效的方式 跨集群自动分布和调度应用容器。
+一个 Kubernetes 集群包含两种类型的资源：
+控制面（Control Plane） 调度整个集群
+节点（Nodes）           负责运行应用
+控制面负责 管理整个集群。 控制面协调集群中的所有活动，例如  调度应用、维护应用的期望状态、对应用扩容以及将新的更新上线等等。
+控制面管理集群，节点用于托管运行中的应用
+节点是一个虚拟机或者物理机，它在 Kubernetes 集群中充当工作机器的角色。 每个节点都有 Kubelet，它管理节点而且是节点与控制面通信的代理。
+节点还应该具有用于  处理容器操作的工具，例如 containerd 或 CRI-O。 
+处理生产级流量的 Kubernetes 集群  至少应具有三个节点，因为如果只有一个节点，出现故障时其对应的 etcd 成员和控制面实例都会丢失， 并且冗余会受到影响。
+你可以通过   添加更多控制面节点来降低这种风险。
+在 Kubernetes 上部署应用时，你告诉控制面启动应用容器。 控制面就编排容器在集群的节点上运行。 
+节点使用控制面所公布的 Kubernetes API 与控制面通信。终端用户也可以使用 Kubernetes API 与集群交互。
+Kubernetes 既可以部署在 物理机上也可以部署在 虚拟机上。你可以使用 Minikube 开始部署 Kubernetes 集群。 
+Minikube 是一种轻量级的 Kubernetes 实现，可在本地计算机上创建 VM 并部署仅包含一个节点的简单集群。
+Minikube 可用于 Linux、macOS 和 Windows 系统。Minikube CLI 提供了用于引导集群工作的多种操作， 包括启动、停止、查看状态和删除。
+四、使用 kubectl 创建 Deployment
+学习应用的部署。
+使用 kubectl 在 Kubernetes 上  部署第一个应用。
+本教程中的 Shell 命令使用 POSIX Shell 语法， 大多数 Linux 和 macOS 系统的默认 Shell（例如 bash、zsh 或 sh）都支持这种语法。 Windows 用户必须使用兼容 POSIX 的 Shell，例如 Windows Subsystem for Linux (WSL) 或 Git Bash，才能按本文所述的方式运行这些命令。 
+使用 export、$() 以及类似构造的命令 不兼容 PowerShell 或 Windows Command Prompt。
+
+Kubernetes Deployment
+Deployment 负责创建和更新应用的实例
+说明：
+本教程使用了一个需要 AMD64 架构的容器。如果你在使用 Minikube 的计算机上使用了不同的 CPU 架构，可以尝试使用能够模拟 AMD64 的 Minikube 驱动程序。例如，Docker Desktop 驱动程序可以实现这一点。
+
+//一旦运行了 Kubernetes 集群， 就可以在其上部署容器化应用。//
+为此，你需要创建 Kubernetes Deployment。 
+Deployment 指挥 Kubernetes 如何 创建和更新应用的实例。 
+创建 Deployment 后，Kubernetes 控制平面将 Deployment 中包含的  应用实例调度到 集群中的各个节点上。
+
+创建应用实例后，Kubernetes Deployment 控制器会持续监视这些实例。 
+//如果托管实例的节点关闭或被删除，则 Deployment 控制器会将 该实例替换为集群中另一个节点上的实例。//  这提供了一种  自我修复机制 来解决机器故障维护问题。
+在没有 Kubernetes 这种编排系统之前，安装脚本通常用于启动应用， 但它们不允许从机器故障中恢复。
+通过创建 应用实例并使它们在节点之间运行， Kubernetes Deployment 提供了一种与众不同的应用管理方法。
+
+部署你在 Kubernetes 上的第一个应用
+应用需要打包成一种受支持的容器格式，以便部署在 Kubernetes 上。
+你可以使用 Kubernetes 命令行界面 kubectl 创建和管理 Deployment。 
+kubectl 使用 Kubernetes API 与集群进行交互。在本单元中，你将学习创建在 Kubernetes 集群上运行应用的 Deployment 所需的最常见的 kubectl 命令。
+创建 Deployment 时，你需要指定应用的容器镜像以及要运行的副本数。 
+你可以稍后通过更新 Deployment 来更改该信息； 模块 5 和模块 6 讨论了如何扩展和更新 Deployment。
+对于你第一次部署，你将使用打包在 Docker 容器中的 hello-node 应用，该应用使用 NGINX 回显所有请求。 
+（如果你尚未尝试创建 hello-node 应用并使用容器进行部署，则可以首先按照 Hello Minikube 教程中的说明进行操作）。
+你也需要安装好 kubectl。如果你需要安装 kubectl， 参阅安装工具。
+现在你已经了解了部署的内容，让我们部署第一个应用！
+
+kubectl 基础知识
+kubectl 命令的常见格式是：kubectl action resource。
+这会对指定的资源（类似 node 或 deployment）执行指定的操作（类似 create、describe 或 delete）。 
+你可以在子命令之后使用 --help 获取可能参数相关的更多信息 （例如：kubectl get nodes --help）。
+通过运行 kubectl version 命令，查看 kubectl 是否被配置为与你的集群通信。
+查验 kubectl 是否已安装，你能同时看到客户端和服务器版本。
+要查看集群中的节点，运行 kubectl get nodes 命令。
+你可以看到可用的节点。稍后 Kubernetes 将根据节点可用的资源选择在哪里部署应用。
+
+三、部署一个应用
+让我们使用 kubectl create deployment 命令在 Kubernetes 上部署第一个应用。            （应用镜像位置）
+////我们需要提供 Deployment 命令以及 应用镜像位置（包括托管在 Docker Hub 之外的镜像的完整仓库地址）///。
+kubectl create deployment kubernetes-bootcamp --image=gcr.io/google-samples/kubernetes-bootcamp:v1
+很好！你刚刚通过创建 Deployment 部署了第一个应用。这个过程中执行了以下一些操作：
+搜索应用实例可以运行的合适节点（我们只有一个可用的节点）
+调度应用在此节点上运行
+配置集群在需要时将实例重新调度到新的节点上
+要列出你的 Deployment，使用 kubectl get deployments 命令：
+kubectl get deployments
+我们看到有 1 个 Deployment 运行应用的单个实例。这个实例运行在节点上的一个容器内。
+
+查看应用
+在 Kubernetes 内运行的 Pod 运行在一个私有的、隔离的网络上。 默认这些 Pod 可以从同一 Kubernetes 集群内的其他 Pod 和服务看到，但超出这个网络后则看不到。
+///当我们使用 kubectl 时，我们通过   API 端点交互与应用  进行通信///。
+kubectl proxy 命令可以创建一个代理，将通信转发到集群范围的私有网络。按下 Ctrl-C 此代理可以被终止，且在此代理运行期间不会显示任何输出。
+
+你需要打开第二个终端窗口来运行此代理。
+kubectl proxy
+//现在我们在主机（终端）和 Kubernetes 集群之间有一个连接//。此代理能够从这些终端直接访问 API//。
+你可以看到通过代理端点托管的所有 API。 例如，我们可以  //使用以下 curl 命令直接通过 API 查询版本//：
+curl http://localhost:8001/version
+说明：
+如果 Port 8001 不可访问，确保你上述 /启动的 kubectl proxy 运行在第二个终端中/。
+API 服务器将基于也能通过代理访问的 Pod 名称  为每个 Pod 自动创建端点。
+首先我们需要获取 Pod 名称，我们将存储到环境变量 POD_NAME 中：
+export POD_NAME=$(kubectl get pods -o go-template --template '{{range .items}}{{.metadata.name}}{{"\n"}}{{end}}')
+echo Name of the Pod: $POD_NAME
+你可以运行以下命令通过代理的 API 访问 Pod：
+curl http://localhost:8001/api/v1/namespaces/default/pods/$POD_NAME:8080/proxy/
+为了不使用代理也能访问新的 Deployment，需要一个 Service， 这将在下一个模块 4 中讲述。
+
+四、查看 Pod 和节点
+目标
+了解 Kubernetes Pod。
+了解 Kubernetes 节点。
+对已部署的应用进行故障排查。
+Kubernetes Pod
+Pod 是一个或多个应用容器（例如 Docker）的组合，并且包含共享的存储（卷）、IP 地址和有关如何运行它们的信息。
+在模块 2 中创建 Deployment 时，Kubernetes 创建了一个 Pod 来托管你的应用实例。 
+Pod 是 Kubernetes 抽象出来的，表示一组一个或多个应用容器（如 Docker）， 以及 这些容器的一些共享资源。这些资源包括：
+卷形式的共享存储
+集群内 唯一的 IP 地址，用于联网
+有关每个容器 如何运行的信息，例如容器镜像版本 或要 使用的特定端口     /（容器的特定端口）/
+
+Pod 为特定于应用的“逻辑主机”建模，并且可以包含相对紧耦合的不同应用容器。 
+例如，Pod 可能既包含带有 Node.js 应用的容器，也包含另一个不同的容器， 用于提供 Node.js 网络服务器要发布的数据。
+Pod 中的容器共享 IP 地址和端口， 始终位于 同一位置并且共同调度，并在同一节点上的共享上下文中运行。
+Pod 是 Kubernetes 平台上的原子单元。当我们在 Kubernetes 上创建 Deployment 时， 该 Deployment 会创建其中包含容器的 Pod（而不是直接创建容器）。 每个 Pod 都与被调度所在的节点绑定，并保持在那里直到（根据重启策略）终止或删除。
+如果节点发生故障，则相同的 Pod 会被调度到集群中的其他可用节点上。
+Pod 概述
+只有容器 紧耦合并且需要 共享磁盘等资源时，才应将其编排在一个 Pod 中。  （pod编排原则）
+
+节点
+一个 Pod 总是运行在某个 Node（节点） 上。节点是 Kubernetes 中工作机器， 可以是虚拟机或物理计算机，具体取决于集群。
+每个 Node 都由控制面管理。 节点可以有多个 Pod，Kubernetes 控制面会自动处理在集群中的节点上调度 Pod。 控制面的自动调度 考量了每个节点上的可用资源。
+每个 Kubernetes 节点至少运行：                       （重要作用）
+kubelet，负责/ Kubernetes 控制面和节点之间通信 /的进程；它  管理机器上运行的 Pod 和容器。
+容器运行时（如 Docker）负责 从/镜像仓库中拉取容器镜像/、/解压缩容器/以及/运行应用/。
+
+////使用 kubectl 进行故障排查////                                       （k8s故障排查）
+在模块 2 中， 你使用了 kubectl 命令行界面。你将继续在第 3 个模块中使用 kubectl 来//获取有关已部署应用/及其环境的信息//。
+最常见的操作可以使用以下 kubectl 子命令完成：
+kubectl get - 列出资源
+kubectl describe - 显示有关资源的详细信息
+kubectl logs - 打印 Pod 中容器的日志
+kubectl exec - 在 Pod 中的容器上执行命令
+你可以使用这些命令查看应用的部署时间、当前状态、运行位置以及配置。
+现在我们了解了有关集群组件和命令行的更多信息，让我们来探索一下我们的应用。
+
+检查应用配置
+让我们验证之前场景中部署的应用是否在运行。我们将使用 kubectl get 命令查看现存的 Pod：
+kubectl get pods
+如果没有 Pod 在运行，请等几秒，让 Pod 再次列出。一旦看到一个 Pod 在运行，就可以继续操作。 
+接下来，要查看 Pod 内有哪些容器以及使用了哪些镜像来构建这些容器，我们运行 kubectl describe pods 命令：
+kubectl describe pods
+我们在这里看到了 Pod 的容器相关详情：IP 地址、所使用的端口以及 Pod 生命期有关的事件列表。
+describe 子命令的输出宽泛，涵盖了一些我们还未讲到的概念，但不用担心， 这节课结束时你就会熟悉这些概念了。
+说明：
+describe 子命令可用于获取有关大多数 Kubernetes 原语的详细信息， 包括 Node、Pod 和 Deployment。
+describe 的输出设计为人类可读的信息， 而不是脚本化的信息。
+
+在终端中显示应用
+回想一下，Pod 运行在隔离的、私有的网络中 —— 因此我们需要代理访问它们，这样才能进行调试和交互。 为了做到这一点，我们将使用 kubectl proxy 命令在第二个终端中运行一个代理。
+打开一个新的终端窗口，在这个新的终端中运行以下命令：
+kubectl proxy
+现在我们再次获取 Pod 名称并直接通过代理查询该 Pod。 要获取 Pod 命令并将其存到 POD_NAME 环境变量中， 运行以下命令：
+export POD_NAME="$(kubectl get pods -o go-template --template '{{range .items}}{{.metadata.name}}{{"\n"}}{{end}}')"
+echo Name of the Pod: $POD_NAME
+要查看应用的输出，执行一个 curl 请求：
+curl http://localhost:8001/api/v1/namespaces/default/pods/$POD_NAME:8080/proxy/
+URL 是到 Pod API 的路由。
+说明：
+我们不需要指定容器名称，因为在 Pod 内只有一个容器。
+
+在容器上执行命令
+一旦 Pod 启动并运行，我们就可以直接在容器上执行命令。
+为此，我们使用 exec 子命令，并将 Pod 的名称作为参数。 让我们列出环境变量：
+kubectl exec "$POD_NAME" -- env
+另外值得一提的是，由于 Pod 中只有一个容器，所以容器本身的名称可以被省略。
+
+接下来，让我们在 Pod 的容器中   启动一个 bash 会话：
+kubectl exec -ti $POD_NAME -- bash
+现在我们有了一个在运行 Node.js 应用的容器上打开的控制台。 该应用的源代码位于 server.js 文件中：
+cat server.js
+你可以通过运行 curl 命令查看应用是否启动：
+curl http://localhost:8080
+在这里我们使用了 localhost，因为我们在 NodeJS Pod 内执行了此命令。 
+如果你无法连接到 localhost:8080，请确保你已经运行了 kubectl exec 命令，并且是从 Pod 内启动的该命令。
+要关闭你的容器连接，键入 exit。
+
+五、使用 Service 公开你的应用
+目标
+了解 Kubernetes 中的 Service
+了解标签（Label）和选择算符（Selector）如何与 Service 关联
+用 Service 向 Kubernetes 集群外公开应用
+
+Kubernetes Service 概述 
+Kubernetes Pod 是有生命期的。 Pod 拥有生命周期。 当一个工作节点 /停止工作后，在节点上运行的 Pod 也会消亡。 
+ReplicaSet 会自动地通过创建新的 Pod 驱动集群回到期望状态，以保证应用正常运行。 
+换一个例子，考虑一个具有 3 个副本的用作图像处理的后端程序。 
+这些副本是彼此可替换的。前端系统不应该关心后端副本，即使某个 Pod 丢失或被重新创建。
+此外，Kubernetes 集群中的每个 Pod 都有一个唯一的 IP 地址，即使是在同一个 Node 上的 Pod 也是如此， 
+因此需要一种方法来自动协调 Pod 集合中的变化，以便应用保持运行。
+
+Kubernetes 的 Service 是一个抽象层，它所定义的是 Pod 的一个逻辑集合， 并为这些 Pod 支持外部流量公开、负载平衡和服务发现。
+Kubernetes 中的 Service 是一种抽象概念，它定义的是 Pod 的一个逻辑集合和一种用来访问 Pod 的协议。 
+Service 使从属 Pod 之间的松耦合成为可能。 和所有 Kubernetes 对象清单一样，Service 用 YAML 或者 JSON 来定义。 Service 下的一组 Pod 通常由一个标签选择算符来标记 
+（请参阅下面的说明来了解为什么你可能想要一个 spec 中不包含 selector 的 Service）。
+虽然每个 Pod 都有唯一的 IP 地址，但如果没有 Service，这些 IP 地址不会公开到集群外部。
+Service 允许你的应用接收流量。通过在 Service 的 spec 中指定 type，可以以不同的方式公开 Service：
+ClusterIP（默认）- 在集群的内部 IP 上公开 Service。 这种类型使得 Service 只能从集群内访问。
+NodePort - 使用 NAT 在集群中每个选定 Node 的相同端口上公开 Service 。 使用 NodeIP:NodePort 从集群外部访问 Service。这是 ClusterIP 的超集。
+LoadBalancer - 在当前云中创建一个外部负载均衡器（如果支持的话）， 并为 Service 分配一个固定的外部 IP。这是 NodePort 的超集。
+ExternalName - 将 Service 映射到 externalName 字段的内容（例如 foo.bar.example.com），通过返回带有该名称的 CNAME 记录实现。不设置任何类型的代理。 
+这种类型需要 kube-dns 的 v1.7 或更高版本，或者 CoreDNS 的 v0.8 或更高版本。
+关于不同 Service 类型的更多信息可以在使用源 IP 教程找到。也请参阅使用 Service 连接到应用。
+另外，需要注意的是有一些 Service 的用例不需要在 spec 中定义 selector。一个创建时未设置 selector 的 Service 也不会创建相应的 Endpoints 对象。
+这允许用户手动将 Service 映射到特定的端点。 没有 selector 的另一种可能是你在严格使用 type: ExternalName Service。
+
+Service 和标签 
+Service 为一组 Pod 提供//流量路由。Service 是一种抽象， 使得 Kubernetes 中的 Pod 死亡和复制不会影响应用。
+在依赖的 Pod（如应用中的前端和后端组件）之间进行发现和路由是由 Kubernetes Service 处理的。
+Service 通过标签和选择算符来匹配一组 Pod。 标签和选择算符是允许对 Kubernetes 中的对象进行逻辑操作的一种分组原语。 
+标签是附加在对象上的键/值对，可以以多种方式使用：
+指定用于开发、测试和生产的对象
+嵌入版本标记
+使用标记将对象分类
+标签可以在对象创建时或之后附加到对象上，它们可以随时被修改。 现在使用 Service 发布我们的应用并添加一些标签。
+
+第一步：创建新 Service 
+让我们来验证我们的应用正在运行。我们将使用 kubectl get 命令并查找现有的 Pod：
+kubectl get pods
+如果没有 Pod 正在运行，则意味着之前教程中的对象已被清理。这时请返回并参考使用 kubectl 创建 Deployment 教程重新创建 Deployment。
+请等待几秒钟，然后再次列举 Pod。一旦看到一个 Pod 正在运行，你就可以继续了。
+接下来，让我们列举当前集群中的 Service：
+kubectl get services
+为了将 Deployment 公开给外部流量，我们将使用 kubectl expose 命令和 --type=NodePort 选项：
+kubectl expose deployment/kubernetes-bootcamp --type="NodePort" --port 8080
+我们现在有一个运行中的 Service 名为 kubernetes-bootcamp。 这里我们看到 Service 收到了一个唯一的集群内 IP（Cluster-IP）、一个内部端口和一个外部 IP （External-IP）（Node 的 IP）。
+要得到外部打开的端口号（对于 type: NodePort 的 Service）， 我们需要运行 describe service 子命令：
+kubectl describe services/kubernetes-bootcamp
+创建一个名为 NODE_PORT 的环境变量，它的值为所分配的 Node 端口：
+export NODE_PORT="$(kubectl get services/kubernetes-bootcamp -o go-template='{{(index .spec.ports 0).nodePort}}')"
+echo "NODE_PORT=$NODE_PORT"
+现在我们可以使用 curl、Node 的 IP 地址和对外公开的端口， 来测试应用是否已经被公开到了集群外部：
+curl http://"$(minikube ip):$NODE_PORT"
+说明：
+如果你正在使用 Docker Desktop 作为容器驱动来运行 minikube，需要使用 minikube 隧道。
+这是因为 Docker Desktop 内部的容器和宿主机是隔离的。
+在另一个终端窗口中，执行：
+minikube service kubernetes-bootcamp --url
+输出结果如下：
+http://127.0.0.1:51082
+!  Because you are using a Docker driver on darwin, the terminal needs to be open to run it.
+然后使用提供的 URL 访问应用：
+curl 127.0.0.1:51082
+然后我们就会收到服务器的响应。Service 已经被公开出来。
+
+第二步：使用标签 
+Deployment ///自动给我们的 Pod 创建了一个标签///。
+通过 describe deployment 子命令你可以看到那个标签的名称（对应 key）：
+kubectl describe deployment
+让我们使用这个标签来查询 Pod 列表。我们将使用 kubectl get pods 命令和 -l 参数，后面给出标签值：
+kubectl get pods -l app=kubernetes-bootcamp
+你可以用同样的方法列出现有的 Service：
+kubectl get services -l app=kubernetes-bootcamp
+获取 Pod 的名称，然后存放到 POD_NAME 环境变量：
+export POD_NAME="$(kubectl get pods -o go-template --template '{{range .items}}{{.metadata.name}}{{"\n"}}{{end}}')"
+echo "Name of the Pod: $POD_NAME"
+要应用一个新的标签，我们使用 label 子命令， 接着是对象类型、对象名称和新的标签：
+kubectl label pods "$POD_NAME" version=v1
+这将会在我们的 Pod 上应用一个新标签（我们把应用版本锁定到 Pod 上）， 然后我们可以通过 describe pods 命令检查它：
+kubectl describe pods "$POD_NAME"
+我们可以看到现在标签已经被附加到我们的 Pod 上。 我们可以通过新的标签来查询 Pod 列表：
+kubectl get pods -l version=v1
+我们看到了对应的 Pod。
+
+第三步：删除一个 Service 
+要删除一个 Service 你可以使用 delete service 子命令。这里  //也可以使用标签//：
+kubectl delete service -l app=kubernetes-bootcamp
+确认对应的 Service 已经消失：
+kubectl get services
+这里确认了我们的 Service 已经被删除。要确认路由已经不再被公开， 你可以 curl 之前公开的 IP 和端口：
+curl http://"$(minikube ip):$NODE_PORT"
+这证明了集群外部已经不再可以访问应用。 你可以通过在 Pod 内部运行 curl 确认应用仍在运行：
+kubectl exec -ti $POD_NAME -- curl http://localhost:8080
+这里我们看到应用是运行状态。这是因为 Deployment 正在管理应用。 //要关闭应用，你还需要删除 Deployment。//
+
+六、运行多实例的应用                            （手动扩缩现有的应用）
+目标 
+使用 kubectl 手动扩缩现有的应用
+
+扩缩应用                                               （在启动 Deployment 时创建多个实例）
+通过在使用 kubectl create deployment 命令时//设置 --replicas 参数， 你可以在启动 Deployment 时创建多个实例///。
+之前我们创建了一个 Deployment， 然后通过 Service 让其可以公开访问。
+Deployment 仅创建了一个 Pod 用于运行这个应用。///当流量增加时，我们需要 扩容应用满足用户需求///。
+如果你还没有学习过之前的章节， 需要从使用 Minikube 创建集群开始。
+            //扩缩是通过改变 Deployment 中的副本数量来实现的。//
+说明：
+如果你是在上一节之后尝试此操作， 那么你可能已经删除了创建的 Service 或已创建了 type: NodePort 类型的 Service。 
+在本节中，假设你已经为 kubernetes-bootcamp Deployment 创建了 type: LoadBalancer 类型的 Service。
+如果你没有删除在前一节中创建的 Service， 请先删除该 Service，然后运行以下命令来创建一个新的 type 设置为 LoadBalancer 的 Service：
+kubectl expose deployment/kubernetes-bootcamp --type="LoadBalancer" --port 8080
+
+扩缩概述
+扩缩是通过改变 Deployment 中的副本数量来实现的。
+对 Deployment 横向扩容将保证新的 Pod 被创建并调度到有可用资源的 Node 上， 扩容会将 Pod 数量增加至新的预期状态。 Kubernetes 还支持 Pod 的自动扩缩容， 但这并不在本教程的讨论范围内。
+将 Pod 数量收缩到 0 也是可以的，这会终止指定 Deployment 上所有的 Pod。
+运行多实例的应用，需要有方法在多个实例之间分配流量。Service 有一个集成的负载均衡器， 将网络流量分配到一个可公开访问的 Deployment 的所有 Pod 上。
+Service 将会通过 Endpoints 来持续监视运行中的 Pod 集合，保证流量只分配到可用的 Pod 上。
+一旦有了多个应用实例，就可以进行滚动更新而不会出现服务中断情况。我们将会在教程的下一节介绍这些内容。 现在让我们进入终端，扩缩我们的应用。
+扩缩 Deployment
+要列出你的 Deployment，可以使用 get deployments 子命令：
+kubectl get deployments
+输出应该类似这样：
+NAME                  READY   UP-TO-DATE   AVAILABLE   AGE
+kubernetes-bootcamp   1/1     1            1           11m
+我们应该有 1 个 Pod。如果没有，请重新运行命令。结果显示：
+NAME 列出了集群中的 Deployment 的名称。
+READY 显示当前副本数与期望副本数的比例。
+UP-TO-DATE 显示已更新至期望状态的副本数。
+AVAILABLE 显示可用的 Pod 的数量。
+AGE 显示应用已运行的时间。
+kubectl get rs
+注意 ReplicaSet 名称总是遵循 [DEPLOYMENT-NAME]-[RANDOM-STRING] 的格式。 随机字符串是使用 pod-template-hash 作为种子随机生成的。
+两个重要的列是：
+///DESIRED 显示期望应用具有的副本数量，在你创建 Deployment 时要定义这个值。这是期望的状态。///
+///CURRENT 显示当前正在运行的副本数量。///
+接下来，让我们将 Deployment 扩容到 4 个副本。                   （kubectl scale 命令扩容到 4 个副本）
+我们将使用 kubectl scale 命令，后面给出 Deployment 类别、名称和预期的实例数量：     replicas=4
+kubectl scale deployments/kubernetes-bootcamp --replicas=4
+要再次列举出你的 Deployment 集合，使用 get deployments：
+kubectl get deployments
+更改已经被应用，我们有 4 个应用实例可用。接下来，让我们检查 Pod 的数量是否发生变化：
+kubectl get pods -o wide                                            （现在有 4 个 Pod）
+现在有 4 个 Pod，各有不同的 IP 地址。这一变化会记录到 Deployment 的事件日志中。 要检查这一点，可以使用 describe 子命令：
+kubectl describe deployments/kubernetes-bootcamp
+你还可以从该命令的输出中看到，现在有 4 个副本。
+
+负载均衡
+让我们来检查 Service 是否在进行流量负载均衡。要查找对外公开的 IP 和端口， 我们可以使用在教程之前部份学到的 describe services：
+kubectl describe services/kubernetes-bootcamp
+创建一个名为 NODE_PORT 的环境变量，值为 Node 的端口：
+export NODE_PORT="$(kubectl get services/kubernetes-bootcamp -o go-template='{{(index .spec.ports 0).nodePort}}')"
+echo NODE_PORT=$NODE_PORT
+接下来，我们将使用 curl 访问对外公开的 IP 和端口。多次执行以下命令：
+curl http://"$(minikube ip):$NODE_PORT"
+我们每个请求都命中了不同的 Pod，这证明负载均衡正在工作。
+输出应该类似于：
+Hello Kubernetes bootcamp! | Running on: kubernetes-bootcamp-644c5687f4-wp67j | v=1
+Hello Kubernetes bootcamp! | Running on: kubernetes-bootcamp-644c5687f4-hs9dj | v=1
+Hello Kubernetes bootcamp! | Running on: kubernetes-bootcamp-644c5687f4-4hjvf | v=1
+Hello Kubernetes bootcamp! | Running on: kubernetes-bootcamp-644c5687f4-wp67j | v=1
+Hello Kubernetes bootcamp! | Running on: kubernetes-bootcamp-644c5687f4-4hjvf | v=1
+说明：
+如果你使用 Docker Desktop 作为容器驱动程序运行 Minikube，则需要使用 Minikube 隧道。 这是因为 Docker Desktop 内的容器与主机隔离。
+在另一个终端窗口中，执行：
+minikube service kubernetes-bootcamp --url
+输出类似于：
+http://127.0.0.1:51082
+!  Because you are using a Docker driver on darwin, the terminal needs to be open to run it.
+然后使用给定的 URL 访问应用：
+curl 127.0.0.1:51082
+缩容
+kubectl scale deployments/kubernetes-bootcamp --replicas=2
+要检查更改是否已应用，可使用 get deployments 子命令：
+kubectl get deployments
+副本数量减少到了 2 个，要列出 Pod 的数量，使用 get pods 列举 Pod：
+kubectl get pods -o wide
+这证实了有 2 个 Pod 被终止
+
+七、执行滚动更新
+目标
+使用 kubectl 执行滚动更新。
+
+更新应用 
+滚动更新通过// 增量式  更新 Pod 实例并  替换为新的实例//，允许在 Deployment //更新过程中实现零停机//。
+用户希望 应用程序始终可用，而开发人员则需要每天 多次部署它们的新版本。 在 Kubernetes 中，这些是//通过滚动更新//（Rolling Update）完成的。 
+滚动更新允许通过使用//新的实例逐步更新 Pod 实例，实现零停机的 Deployment 更新。新的 Pod 将被调度到具有可用资源的节点上。
+在前面的模块中，我们将扩大应用的规模以运行多个实例。这是在对不影响应用程序可用性的情况下执行更新的要求。 
+默认情况下，更新期间不可用的 Pod 的个数上限和可以创建的新 Pod 个数上限都是 1。
+这两个选项都可以配置为（Pod）数字或百分比。 在 Kubernetes 中，更新是具有版本控制的，任何 Deployment 更新都可以恢复到以前的（稳定）版本。
+
+滚动更新概述
+如果 Deployment 的访问是公开的，Service 只将流量发送到能够处理请求的 Pod。
+这可以确保在更新期间，用户仍然可以继续访问此应用。
+在滚动更新期间，这种行为通过仅将流量路由到正在处理请求的 Pod 来保持应用的可用性。 滚动更新允许以下操作：
+//将应用程序从一个环境升级到另一个环境（通过容器镜像更新）
+回滚到以前的版本
+持续集成和持续交付应用程序，无需停机
+在以下交互式教程中，我们将更新我们的应用程序到新版本，并执行回滚。//
+
+更新应用的版本
+要列出你的 Deployment，可以运行 get deployments 子命令：
+kubectl get deployments
+要列出正在运行的 Pod，可以运行 get pods 子命令：
+kubectl get pods
+要查看应用程序当前的镜像版本，可以运行 describe pods 子命令， 然后查找 Image 字段：
+kubectl describe pods
+要将应用程序的镜像版本更新为 v2，可以使用 set image 子命令， 后面跟着 Deployment 名称和新版本的镜像：
+kubectl set image deployments/kubernetes-bootcamp kubernetes-bootcamp=docker.io/jocatalin/kubernetes-bootcamp:v2
+此命令通知 Deployment 为应用程序使用不同的镜像，并启动滚动更新。 
+要检查新 Pod 的状态，并查看旧 Pod 的终止状况，可以使用 get pods 子命令：
+kubectl get pods
+验证更新
+首先，检查 Service 是否正在运行，因为你可能在上一个教程步骤中删除了它。 运行 describe services/kubernetes-bootcamp，如果 Service 缺失， 你可以使用以下命令重新创建：
+kubectl expose deployment/kubernetes-bootcamp --type="NodePort" --port 8080
+创建名为 NODE_PORT 的环境变量，值为已被分配的 Node 端口：
+export NODE_PORT="$(kubectl get services/kubernetes-bootcamp -o go-template='{{(index .spec.ports 0).nodePort}}')"
+echo "NODE_PORT=$NODE_PORT"
+接下来，针对所暴露的 IP 和端口执行 curl：
+curl http://"$(minikube ip):$NODE_PORT"
+你每次执行 curl 命令，都会命中不同的 Pod。注意现在所有的 Pod 都运行着最新版本（v2）。
+你也可以通过运行 rollout status 子命令来确认此次更新：
+kubectl rollout status deployments/kubernetes-bootcamp
+要查看应用程序当前的版本，请运行 describe pods 子命令：
+kubectl describe pods
+在输出中，验证应用程序正在运行最新版本的镜像（v2）。
+
+回滚更新
+让我们执行另一次更新，并尝试部署一个标记为 v10 的镜像：
+kubectl set image deployments/kubernetes-bootcamp kubernetes-bootcamp=gcr.io/google-samples/kubernetes-bootcamp:v10
+使用 get deployments 查看 Deployment 的状态：
+kubectl get deployments
+注意输出中不会列出期望的可用 Pod 数。运行 get pods 子命令来列出所有 Pod：
+kubectl get pods
+注意输出中，某些 Pod 的状态为 ImagePullBackOff。
+要获取关于这一问题的更多信息，可以运行 describe pods 子命令：
+kubectl describe pods
+在受影响的 Pod 的输出中，注意其 Events 部分包含 v10 版本的镜像在仓库中不存在的信息。
+要回滚 Deployment 到你上一次工作版本的更新，可以运行 rollout undo 子命令：
+kubectl rollout undo deployments/kubernetes-bootcamp
+rollout undo 命令会恢复 Deployment 到先前的已知状态（v2 的镜像）。 
+   更新是有版本控制的，你可以恢复 Deployment 到任何先前已知状态。
+使用 get pods 子命令再次列出 Pod：
+kubectl get pods
+要检查正在运行的 Pod 上部署的镜像，请使用 describe pods 子命令：
+kubectl describe pods
+Deployment 正在使用稳定的应用程序版本（v2）。回滚操作已成功完成。
+记得清理本地集群：
+kubectl delete deployments/kubernetes-bootcamp services/kubernetes-bootca
+
+
+
