@@ -1,0 +1,400 @@
+minikube 是本地 Kubernetes
+您只需要一个 Docker（或类似兼容的）容器或虚拟机环境，即可通过一条命令部署 Kubernetes：minikube start
+容器或虚拟机管理器，例如：Docker、QEMU、Hyperkit、Hyper-V、KVM、Parallels、Podman、VirtualBox或VMware Fusion/Workstation 。
+本教程向你展示如何使用 Minikube 在 Kubernetes 上运行一个应用示例。 教程提供了容器镜像，使用 NGINX 来对所有请求做出回应。
+Kubernetes 中常见资源对象的中文名称如下：
+英文名称	中文名称	作用
+Deployment	部署控制器（部署）     	管理应用部署、升级、扩容、回滚
+ReplicaSet	副本集	                保证指定数量的 Pod 副本运行
+Pod	容器组	K8s                         最小部署单元
+Service	服务	                    为 Pod 提供固定访问入口
+Namespace	                        命名空间	资源隔离
+Node	节点	                        集群中的服务器
+Cluster	集群	                    多个节点组成的 K8s 环境
+ConfigMap	配置映射	                存储配置文件
+Secret	                        密钥对象	存储密码、证书等敏感信息
+Ingress	                          入口控制器	HTTP/HTTPS 路由管理
+教程目标
+将一个示例应用 部署到 Minikube。
+运行应用程序。
+查看应用日志。
+1.准备开始
+本教程假设你已经安装了 minikube。 有关安装说明，请参阅 minikube start 的步骤 1。
+说明：仅执行步骤 1：安装中的说明，其余内容均包含在本页中。
+你还需要安装 kubectl。 有关安装说明，请参阅安装工具。
+
+2.创建 Minikube 集群 
+minikube start
+启动集群在具有管理员权限（但未以 root 用户身份登录）的终端中运行：
+minikube start
+如果 minikube 启动失败，请参阅驱动程序页面，以获取有关设置兼容容器或虚拟机管理器的帮助。
+
+3.与您的集群交互
+如果您已经安装了 kubectl（请参阅文档），现在就可以使用它来 访问您全新的集群了：
+kubectl get po -A
+或者，minikube 可以下载相应版本的 kubectl，然后您就可以像这样使用它：
+minikube kubectl -- get po -A
+您还可以通过在 shell 配置中添加以下内容来 简化您的操作：
+alias kubectl="minikube kubectl --"
+初始阶段，某些服务（例如存储配置器）可能尚未处于运行状态。这是集群启动期间的正常情况，稍后会自动解决。
+为了更深入地了解集群状态，minikube 集成了 Kubernetes Dashboard，方便您快速适应新环境：
+minikube dashboard      （仪表盘）
+
+4.检查 minikube 集群状态
+验证 minikube 集群的状态，确保所有组件都处于运行状态。
+minikube status
+上述命令的 输出应显示所有处于“正在运行”或“已配置”状态的组件，如下例所示：
+minikube
+type: Control Plane
+host: Running
+kubelet: Running
+apiserver: Running
+kubeconfig: Configured
+
+5.打开仪表板 
+打开 Kubernetes 仪表板。你可以通过两种不同的方式执行此操作：
+//打开一个新的终端，然后运行：
+# 启动一个新的终端，并保持此命令运行。
+minikube dashboard
+现在，切换回运行 minikube start 的终端。
+说明：
+dashboard 命令启用 仪表板插件，并在默认的 Web 浏览器中 打开代理。 你可以在仪表板上创建 Kubernetes 资源，例如 Deployment 和 Service。
+默认情况下，仪表板只能从 内部 Kubernetes 虚拟网络中访问。 dashboard 命令创建一个 临时代理，使仪表板可以从 Kubernetes 虚拟网络 外部访问。
+要停止代理，请运行 Ctrl+C 退出该进程。
+仪表板仍在运行中。 命令退出后，仪表板仍然在 Kubernetes 集群中运行。 你可以再次运行 dashboard 命令创建另一个代理来访问仪表板。
+要了解如何避免 从终端直接调用浏览器并获取 Web 仪表板的 URL，请参阅 "URL 复制和粘贴"选项卡。
+如果你不想 Minikube 为你打开 Web 浏览器，可以使用 --url 标志运行 dashboard 子命令。 minikube 会输出一个 URL，你可以在浏览器中打开该 URL。
+打开一个新的终端，然后运行：
+# 启动一个新的终端，并保持此命令运行。
+minikube dashboard --url
+现在，你可以使用此 URL 并切换回运行 minikube start 的终端
+
+6.创建 Deployment 
+Kubernetes Pod 是由一个或多个为了  管理和联网而绑定在一起的  容器构成的组。本教程中的 Pod 只有一个容器。（即一个pod包含了多个容器）
+Kubernetes Deployment 检查 Pod 的健康状况，并在 Pod 中的 容器终止的情况下 重新启动新的容器。 
+Deployment 是管理 Pod 创建和扩展的推荐方法。
+Deployment 是最常用的资源对象之一，用来 管理应用程序的部署和生命周期。
+简单理解：
+Deployment       部署控制器（部署）
+  ↓
+ ReplicaSet       副本集
+    ↓
+    Pod            容器组
+Deployment 不直接管理 Pod，而是通过 ReplicaSet 来管理多个 Pod。
+Deployment 的作用
+1. 创建 Pod
+例如
+replicas: 3
+K8s 会自动创建 3 个 Pod。
+Deployment
+   │
+   ├── Pod1
+   ├── Pod2
+   └── Pod3
+2. 保证 Pod 数量
+假设 Pod2 崩溃：
+pod2 ❌
+Deployment 会自动创建新的 Pod：
+Pod2(new) ✅
+这就是故障自愈（Self-Healing）。
+3. 滚动更新
+例如：
+旧版本：
+nginx:1.20
+升级：
+nginx:1.21
+执行：
+kubectl apply -f deployment.yaml
+Deployment 会逐个替换 Pod：
+旧Pod → 新Pod
+旧Pod → 新Pod
+旧Pod → 新Pod
+业务不中断。
+4. 回滚版本
+查看历史：
+kubectl rollout history deployment nginx
+回滚：
+kubectl rollout undo deployment nginx
+恢复到上一版本。
+//使用 kubectl create 命令 创建管理 Pod的 Deployment。该 Pod 根据提供的  Docker镜像运行容器。
+# 运行包含 Web 服务器8080端口的 测试容器镜像
+kubectl create deployment hello-node --image=registry.k8s.io/e2e-test-images/agnhost:2.53 -- /agnhost netexec --http-port=8080
+//查看 Deployment：
+kubectl get deployments
+输出结果类似于这样：              （deployments的名字叫hello-node ）
+NAME         READY   UP-TO-DATE   AVAILABLE   AGE
+hello-node   1/1     1            1           1m
+（该 Pod 可能需要一些时间才能变得可用。如果你在输出结果中看到 “0/1”，请在几秒钟后重试。）
+//查看 Pod：
+kubectl get pods
+输出结果类似于这样：
+NAME                          READY     STATUS    RESTARTS   AGE
+hello-node-5f76cf6ccf-br9b5   1/1       Running   0          1m
+//查看集群事件：
+kubectl get events
+//查看 kubectl 配置：
+kubectl config view
+//kubectl logs 命令查看 Pod 中 容器的应用程序日志（将Pod名称 替换为你用kubectl get pods命令 获得的名称）。
+说明：
+将 kubectl logs 命令中的 hello-node-5f76cf6ccf-br9b5 替换为 kubectl get pods 命令输出中的 Pod 名称。
+输入kubectl logs hello-node-5f76cf6ccf-br9b5
+输出类似于：
+I0911 09:19:26.677397       1 log.go:195] Started HTTP server on port 8080
+I0911 09:19:26.677586       1 log.go:195] Started UDP server on port  8081
+有关 kubectl 命令的更多信息请参阅 kubectl 概述。
+
+7.创建 Service 
+默认情况下，Pod只能通过 Kubernetes 集群中的 内部 IP 地址访问。 
+要使得 hello-node 容器可以从Kubernetes 虚拟网络的 外部访问，**你必须将Pod 通过 Kubernetes Service 公开出来。
+警告：
+agnhost 容器有一个 /shell 端点，对于调试很有帮助，但暴露给公共互联网很危险。请勿在面向互联网的集群或生产集群上运行它。
+///使用 kubectl expose 命令将 Pod 暴露给公网：                       （kubectl expose将 Pod 暴露给公网）
+kubectl expose deployment hello-node --type=LoadBalancer --port=8080
+这里的 --type=LoadBalancer 参数表明你希望将你的 Service 暴露到集群外部。
+测试镜像中的应用程序代码仅监听 TCP 8080 端口。 如果你用 kubectl expose 暴露了其它的端口，客户端将不能访问其它端口。
+///查看你创建的 Service：
+kubectl get services
+输出结果类似于这样：
+NAME         TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
+hello-node   LoadBalancer   10.108.144.78   <pending>     8080:30369/TCP   21s
+kubernetes   ClusterIP      10.96.0.1       <none>        443/TCP          23m
+对于支持 负载均衡器的云服务平台而言，平台将提供一个外部 IP 来访问该服务。在 Minikube 上，LoadBalancer 使得服务可以通过命令 minikube service 访问。
+///运行下面的命令：
+minikube service hello-node
+这将打开一个浏览器窗口，为你的应用程序提供服务并显示应用的响应。
+/另一个实例
+创建一个示例部署 并将其 暴露在 8080 端口上：
+kubectl create deployment hello-minikube --image=kicbase/echo-server:1.0
+kubectl expose deployment hello-minikube --type=NodePort --port=8080
+可能需要一些时间，但运行以下命令后，您的部署很快就会显示出来：
+kubectl get services hello-minikube
+访问此服务的最简单方法是让 minikube 为您启动一个 Web 浏览器：
+minikube service hello-minikube
+或者，可以使用 kubectl 进行端口转发：
+kubectl port-forward service/hello-minikube 7080:8080
+锵！您的应用程序现在可以在http://localhost:7080/ 上访问。
+你应该能在应用程序输出中看到请求元数据。尝试更改请求路径并观察变化。同样，你可以发送一个 POST 请求并观察输出中是否显示了请求体。
+
+/负载均衡器功能
+要访问负载均衡器部署，请使用“minikube tunnel”命令。以下是一个部署示例：
+kubectl create deployment balanced --image=kicbase/echo-server:1.0
+kubectl expose deployment balanced --type=LoadBalancer --port=8080
+在另一个窗口中，启动隧道，为“均衡”部署创建可路由的 IP 地址：
+minikube tunnel
+要查找可路由的 IP 地址，请运行以下命令并检查该EXTERNAL-IP列：
+kubectl get services balanced
+您的部署现已可通过 <EXTERNAL-IP>:8080 访问。
+
+/启用 Ingress 插件：                 （入口控制）
+minikube addons enable ingress
+Ingress（入口控制器）是 Kubernetes 中用于   管理集群外部 访问 集群内部服务 的组件。
+用户浏览器
+      ↓
+ www.example.com            
+      ↓
+   Ingress
+      ↓
+ ┌─────────┬─────────┐
+ ↓         ↓
+Web服务   API服务
+类似于：
+Nginx 反向代理    Apache Proxy     负载均衡器
+以下示例创建简单的 回声服务器服务和一个 Ingress 对象，用于路由到这些服务。
+kind: Pod
+apiVersion: v1
+metadata:
+  name: foo-app
+  labels:
+    app: foo
+spec:
+  containers:
+    - name: foo-app
+      image: 'kicbase/echo-server:1.0'
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: foo-service
+spec:
+  selector:
+    app: foo
+  ports:
+    - port: 8080
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: bar-app
+  labels:
+    app: bar
+spec:
+  containers:
+    - name: bar-app
+      image: 'kicbase/echo-server:1.0'
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: bar-service
+spec:
+  selector:
+    app: bar
+  ports:
+    - port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: example-ingress
+spec:
+  rules:
+    - http:
+        paths:
+          - pathType: Prefix
+            path: /foo
+            backend:
+              service:
+                name: foo-service
+                port:
+                  number: 8080
+          - pathType: Prefix
+            path: /bar
+            backend:
+              service:
+                name: bar-service
+                port:
+                  number: 8080
+---
+应用以下内容
+kubectl apply -f https://storage.googleapis.com/minikube-site-examples/ingress-example.yaml
+等待入口地址
+kubectl get ingress
+NAME              CLASS   HOSTS   ADDRESS          PORTS   AGE
+example-ingress   nginx   *       <your_ip_here>   80      5m45s
+Docker Desktop 用户请注意：
+要使 Ingress 正常工作，您需要打开一个新的终端窗口并运行，minikube tunnel然后在下一步中使用127.0.0.1代替<ip_from_above>。
+现在验证入口是否正常工作
+$ curl <ip_from_above>/foo
+Request served by foo-app
+...
+$ curl <ip_from_above>/bar
+Request served by bar-app
+...
+
+8.管理您的集群                        （暂停应用程序，恢复已暂停，停止集群   删除所有minikube集群 ）
+暂停 Kubernetes 而不影响已部署的  应用程序：
+minikube pause
+恢复已暂停的实例：
+minikube unpause
+停止集群：
+minikube stop
+更改默认内存限制（需要重启）：
+minikube config set memory 9001
+浏览易于安装的 Kubernetes 服务目录：
+minikube addons list
+创建第二个集群，运行旧版本的 Kubernetes：
+minikube start -p aged --kubernetes-version=v1.34.0
+删除所有minikube集群：
+minikube delete --all
+
+9.启用插件                           （插件addons）
+Minikube 有一组  内置的插件，可以在本地 Kubernetes 环境中 启用、禁用和打开。
+//列出当前 支持的插件：
+minikube addons list
+输出结果类似于这样：
+addon-manager: enabled
+dashboard: enabled
+default-storageclass: enabled
+efk: disabled
+freshpod: disabled
+gvisor: disabled
+helm-tiller: disabled
+ingress: disabled
+ingress-dns: disabled
+logviewer: disabled
+metrics-server: disabled
+nvidia-driver-installer: disabled
+nvidia-gpu-device-plugin: disabled
+registry: disabled
+registry-creds: disabled
+storage-provisioner: enabled
+storage-provisioner-gluster: disabled
+常用插件：
+插件	特点
+NGINX Ingress Controller	最常用
+Traefik	         自动发现服务
+HAProxy Ingress	 高性能
+Kong Ingress Controller	API网关
+Istio	           服务网格
+//启用插件，例如 metrics-server：                        （插件metrics-server：）
+minikube addons enable metrics-server
+输出结果类似于这样：
+The 'metrics-server' addon is enabled
+//查看通过安装该插件  所创建的 Pod 和 Service：
+kubectl get pod,svc -n kube-system
+输出结果类似于这样：
+NAME                                        READY     STATUS    RESTARTS   AGE
+pod/coredns-5644d7b6d9-mh9ll                1/1       Running   0          34m
+pod/coredns-5644d7b6d9-pqd2t                1/1       Running   0          34m
+pod/metrics-server-67fb648c5                1/1       Running   0          26s
+pod/etcd-minikube                           1/1       Running   0          34m
+pod/influxdb-grafana-b29w8                  2/2       Running   0          26s
+pod/kube-addon-manager-minikube             1/1       Running   0          34m
+pod/kube-apiserver-minikube                 1/1       Running   0          34m
+pod/kube-controller-manager-minikube        1/1       Running   0          34m
+pod/kube-proxy-rnlps                        1/1       Running   0          34m
+pod/kube-scheduler-minikube                 1/1       Running   0          34m
+pod/storage-provisioner                     1/1       Running   0          34m
+NAME                           TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)             AGE
+service/metrics-server         ClusterIP   10.96.241.45    <none>        80/TCP              26s
+service/kube-dns               ClusterIP   10.96.0.10      <none>        53/UDP,53/TCP       34m
+service/monitoring-grafana     NodePort    10.99.24.54     <none>        80:30002/TCP        26s
+service/monitoring-influxdb    ClusterIP   10.111.169.94   <none>        8083/TCP,8086/TCP   26s
+//检查 metrics-server 的输出：
+kubectl top pods
+输出类似于：
+NAME                         CPU(cores)   MEMORY(bytes)
+hello-node-ccf4b9788-4jn97   1m           6Mi 
+如果你看到以下消息，请等待并重试：
+error: Metrics API not available
+//禁用 metrics-server：
+minikube addons disable metrics-server
+输出结果类似于这样：
+metrics-server was successfully disabled
+
+10.清理                              （delete清理你在集群中创建的资源）
+现在可以清理你在集群中创建的资源： 
+kubectl delete service hello-node
+kubectl delete deployment hello-node
+停止 Minikube 集群：
+minikube stop
+可选地，删除 Minikube 虚拟机（VM）：   （删除 Minikube）
+minikube delete
+如果你还想使用 Minikube 进一步学习 Kubernetes，那就不需要删除 Minikube。
+本页介绍了启动和运行 minikube 集群的基本知识，现在部署应用的准备工作已经完成。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
