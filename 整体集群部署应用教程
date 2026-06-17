@@ -404,30 +404,31 @@ kubectl get pods -o wide
 kubectl get deployments
 要列出正在运行的 Pod，可以运行 get pods 子命令：
 kubectl get pods
-要查看应用程序当前的镜像版本，可以运行 describe pods 子命令， 然后查找 Image 字段：
-kubectl describe pods
-要将应用程序的镜像版本更新为 v2，可以使用 set image 子命令， 后面跟着 Deployment 名称和新版本的镜像：
+//要查看应用程序当前的镜像版本，可以运行 describe pods 子命令， 然后查找 Image 字段：
+kubectl describe pods                                           (应用程序的镜像版本更新/ set image 子命令)
+//要将应用程序的镜像版本更新为 v2，可以使用 set image 子命令， 后面跟着 Deployment 名称和新版本的镜像：
 kubectl set image deployments/kubernetes-bootcamp kubernetes-bootcamp=docker.io/jocatalin/kubernetes-bootcamp:v2
 此命令通知 Deployment 为应用程序使用不同的镜像，并启动滚动更新。 
 要检查新 Pod 的状态，并查看旧 Pod 的终止状况，可以使用 get pods 子命令：
 kubectl get pods
+
 验证更新
-首先，检查 Service 是否正在运行，因为你可能在上一个教程步骤中删除了它。 运行 describe services/kubernetes-bootcamp，如果 Service 缺失， 你可以使用以下命令重新创建：
+//首先，检查 Service 是否正在运行，因为你可能在上一个教程步骤中删除了它。 运行 describe services/kubernetes-bootcamp，如果 Service 缺失， 你可以使用以下命令重新创建：
 kubectl expose deployment/kubernetes-bootcamp --type="NodePort" --port 8080
 创建名为 NODE_PORT 的环境变量，值为已被分配的 Node 端口：
 export NODE_PORT="$(kubectl get services/kubernetes-bootcamp -o go-template='{{(index .spec.ports 0).nodePort}}')"
 echo "NODE_PORT=$NODE_PORT"
-接下来，针对所暴露的 IP 和端口执行 curl：
+//接下来，针对所暴露的 IP 和端口执行 curl：
 curl http://"$(minikube ip):$NODE_PORT"
 你每次执行 curl 命令，都会命中不同的 Pod。注意现在所有的 Pod 都运行着最新版本（v2）。
 你也可以通过运行 rollout status 子命令来确认此次更新：
 kubectl rollout status deployments/kubernetes-bootcamp
-要查看应用程序当前的版本，请运行 describe pods 子命令：
+//要查看应用程序当前的版本，请运行 describe pods 子命令：
 kubectl describe pods
 在输出中，验证应用程序正在运行最新版本的镜像（v2）。
 
 回滚更新
-让我们执行另一次更新，并尝试部署一个标记为 v10 的镜像：
+让我们执行 另一次更新，并尝试部署一个标记为 v10 的镜像：
 kubectl set image deployments/kubernetes-bootcamp kubernetes-bootcamp=gcr.io/google-samples/kubernetes-bootcamp:v10
 使用 get deployments 查看 Deployment 的状态：
 kubectl get deployments
@@ -437,7 +438,7 @@ kubectl get pods
 要获取关于这一问题的更多信息，可以运行 describe pods 子命令：
 kubectl describe pods
 在受影响的 Pod 的输出中，注意其 Events 部分包含 v10 版本的镜像在仓库中不存在的信息。
-要回滚 Deployment 到你上一次工作版本的更新，可以运行 rollout undo 子命令：
+  //要回滚 Deployment 到你上一次工作版本的更新//，可以运行 rollout undo 子命令：  ((回滚 Deployment 到你上一次工作版本的更新)
 kubectl rollout undo deployments/kubernetes-bootcamp
 rollout undo 命令会恢复 Deployment 到先前的已知状态（v2 的镜像）。 
    更新是有版本控制的，你可以恢复 Deployment 到任何先前已知状态。
@@ -448,6 +449,12 @@ kubectl describe pods
 Deployment 正在使用稳定的应用程序版本（v2）。回滚操作已成功完成。
 记得清理本地集群：
 kubectl delete deployments/kubernetes-bootcamp services/kubernetes-bootca
+
+八、配置
+通过 ConfigMap 更新配置
+使用 ConfigMap 来配置 Redis
+使用边车（Sidecar）容器
+
 
 
 
